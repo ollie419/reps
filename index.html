@@ -374,11 +374,13 @@ html,body{
 <script>
 // ── CONFIG ─────────────────────────────────────────────
 const SB_URL = 'https://kghccccgvjyzdwbaklxj.supabase.co';
-const SB_KEY = 'sb_publishable_RA-9pM-9ps1AVgHxkzrVkg_LgtrFj-q';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnaGNjY2Nndmp5emR3YmFrbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTAwNDEsImV4cCI6MjA5MzkyNjA0MX0.sxhpO5Huuhh9qfa0Yg-xUeAJvDGcRe6aiI39hSly9d4';
 // ───────────────────────────────────────────────────────
 
 const { createClient } = supabase;
-const sb = createClient(SB_URL, SB_KEY);
+const sb = createClient(SB_URL, SB_KEY, {
+  auth: { persistSession: true, storage: window.localStorage }
+});
 
 const LIBRARY = {
   Chest:     ['Bench Press','Incline Bench Press','Decline Bench Press','Dumbbell Fly','Cable Fly','Push-Up','Chest Dip','Pec Deck'],
