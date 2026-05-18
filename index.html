@@ -379,7 +379,18 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 const { createClient } = supabase;
 const sb = createClient(SB_URL, SB_KEY, {
-  auth: { persistSession: true, storage: window.localStorage }
+  auth: {
+    persistSession: true,
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  },
+  global: {
+    headers: {
+      'apikey': SB_KEY,
+      'Content-Type': 'application/json'
+    }
+  }
 });
 
 const LIBRARY = {
