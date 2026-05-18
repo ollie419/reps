@@ -560,23 +560,31 @@ async function logSet() {
   const pr  = isPR(ex, weight);
   btn.disabled = true; st.textContent = 'saving...'; st.className = 'status';
 
-  const { data, error } = await sb.from('sets').insert({
-    exercise_name: ex, sets, reps, weight,
-    logged_date: todayStr(),
-    user_id: currentUser.id
-  }).select().single();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    const { data, error } = await sb.from('sets').insert({
+      exercise_name: ex, sets, reps, weight,
+      logged_date: todayStr(),
+      user_id: currentUser.id
+    }).select().single().abortSignal(controller.signal);
+    
+    clearTimeout(timeoutId);
 
-  if (error) {
-    st.textContent = '⚠ ' + error.message;
+    if (error) throw error;
+    
+    data._pr = pr;
+    allSets.push(data); todaySets.push(data);
+    if (pr) toast('★ NEW PR — ' + ex + ' ' + weight + 'kg');
+    renderSummary(); st.textContent = '';
+    btn.disabled = false;
+  } catch(e) {
+    st.textContent = '⚠ ' + (e.name === 'AbortError' ? 'Request timeout - check connection' : e.message);
     st.className = 'status err';
     btn.disabled = false;
-    return;
+    console.error('logSet error:', e);
   }
-  data._pr = pr;
-  allSets.push(data); todaySets.push(data);
-  if (pr) toast('★ NEW PR — ' + ex + ' ' + weight + 'kg');
-  renderSummary(); st.textContent = '';
-  btn.disabled = false;
 }
 
 // ── DELETE SET ─────────────────────────────────────────
