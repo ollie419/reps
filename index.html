@@ -744,10 +744,21 @@ function renderHistory() {
     const rows = sets.map(s => `
       <div class="h-row">
         <div><span class="h-name">${s.exercise_name}</span>${s._pr ? '<span class="pr-badge">★ PR</span>' : ''}</div>
-        <div><div class="h-meta">${s.sets}×${s.reps} @ ${s.weight}kg</div><div class="h-vol">${s.sets*s.reps*s.weight}kg vol</div></div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div><div class="h-meta">${s.sets}×${s.reps} @ ${s.weight}kg</div><div class="h-vol">${s.sets*s.reps*s.weight}kg vol</div></div>
+          <button class="set-del" onclick="delHistorySet('${s.id}')">×</button>
+        </div>
       </div>`).join('');
     return `<div class="day-group"><div class="day-hd">${fmtDate(d)} · ${sets.length} sets · ${vol}kg</div>${rows}</div>`;
   }).join('');
+}
+
+async function delHistorySet(id) {
+  await sb.from('sets').delete().eq('id', id);
+  allSets   = allSets.filter(s => s.id !== id);
+  todaySets = todaySets.filter(s => s.id !== id);
+  renderHistory();
+  renderSummary();
 }
 
 // ── TAB SWITCH ─────────────────────────────────────────
