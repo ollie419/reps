@@ -393,6 +393,12 @@ const sb = createClient(SB_URL, SB_KEY, {
   }
 });
 
+// Clear invalid tokens on startup
+sb.auth.getSession().catch(() => {
+  localStorage.removeItem('sb-kghccccgvjyzdwbaklxj-auth-token');
+  window.location.reload();
+});
+
 const LIBRARY = {
   Chest:     ['Bench Press','Incline Bench Press','Decline Bench Press','Dumbbell Fly','Cable Fly','Push-Up','Chest Dip','Pec Deck'],
   Back:      ['Deadlift','Pull-Up','Barbell Row','Seated Cable Row','Lat Pulldown','T-Bar Row','Single Arm Row','Face Pull'],
