@@ -372,6 +372,7 @@ html,body{
 <div class="toast" id="toast"></div>
 
 <script>
+<script>
 // ── CONFIG ─────────────────────────────────────────────
 const SB_URL = 'https://kghccccgvjyzdwbaklxj.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnaGNjY2Nndmp5emR3YmFrbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTAwNDEsImV4cCI6MjA5MzkyNjA0MX0.sxhpO5Huuhh9qfa0Yg-xUeAJvDGcRe6aiI39hSly9d4';
@@ -425,7 +426,7 @@ async function submitAuth() {
   const btn = document.getElementById('authBtn');
   const st  = document.getElementById('authStatus');
   if (!email || !password) {
-    st.textContent = 'Enter email and password';
+    st.textContent = 'Enter email and PIN';
     st.className = 'auth-status err';
     return;
   }
@@ -461,7 +462,6 @@ async function signOut() {
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
     if (!session) {
-      // Token invalid, force clean state
       document.getElementById('app').style.display = 'none';
       document.getElementById('authScreen').style.display = 'flex';
       currentUser = null;
@@ -501,7 +501,6 @@ async function loadData() {
     .from('routines').select('*').order('created_at', { ascending: false });
   routines = rdata || [];
 
-  // Load custom exercises
   const { data: customEx } = await sb
     .from('custom_exercises').select('*');
   (customEx || []).forEach(ce => {
@@ -510,27 +509,6 @@ async function loadData() {
       LIBRARY[ce.muscle_group].sort();
     }
   });
-
-  st.textContent = '';
-  renderSummary();
-}
-
-  const { data: sets, error: setsErr } = await sb
-    .from('sets').select('*').order('created_at', { ascending: true });
-  if (setsErr) { st.textContent = '⚠ ' + setsErr.message; st.className = 'status err'; return; }
-
-  allSets   = sets || [];
-  todaySets = allSets.filter(s => s.logged_date === todayStr());
-  const prMap = {};
-  allSets.forEach(s => {
-    const p = prMap[s.exercise_name] || 0;
-    s._pr = +s.weight > p;
-    if (+s.weight > p) prMap[s.exercise_name] = +s.weight;
-  });
-
-  const { data: rdata } = await sb
-    .from('routines').select('*').order('created_at', { ascending: false });
-  routines = rdata || [];
 
   st.textContent = '';
   renderSummary();
@@ -616,6 +594,7 @@ function renderSummary() {
 async function logSet() {
   const ex = document.getElementById('exIn').value.trim();
   if (!ex) { document.getElementById('exIn').focus(); return; }
+  await addToLibrary(ex);
   const sets   = +document.getElementById('setsIn').value;
   const reps   = +document.getElementById('repsIn').value;
   const weight = +document.getElementById('wtIn').value;
@@ -624,31 +603,23 @@ async function logSet() {
   const pr  = isPR(ex, weight);
   btn.disabled = true; st.textContent = 'saving...'; st.className = 'status';
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    
-    const { data, error } = await sb.from('sets').insert({
-      exercise_name: ex, sets, reps, weight,
-      logged_date: todayStr(),
-      user_id: currentUser.id
-    }).select().single().abortSignal(controller.signal);
-    
-    clearTimeout(timeoutId);
+  const { data, error } = await sb.from('sets').insert({
+    exercise_name: ex, sets, reps, weight,
+    logged_date: todayStr(),
+    user_id: currentUser.id
+  }).select().single();
 
-    if (error) throw error;
-    
-    data._pr = pr;
-    allSets.push(data); todaySets.push(data);
-    if (pr) toast('★ NEW PB — ' + ex + ' ' + weight + 'kg');
-    renderSummary(); st.textContent = '';
-    btn.disabled = false;
-  } catch(e) {
-    st.textContent = '⚠ ' + (e.name === 'AbortError' ? 'Request timeout - check connection' : e.message);
+  if (error) {
+    st.textContent = '⚠ ' + error.message;
     st.className = 'status err';
     btn.disabled = false;
-    console.error('logSet error:', e);
+    return;
   }
+  data._pr = pr;
+  allSets.push(data); todaySets.push(data);
+  if (pr) toast('★ NEW PB — ' + ex + ' ' + weight + 'kg');
+  renderSummary(); st.textContent = '';
+  btn.disabled = false;
 }
 
 // ── DELETE SET ─────────────────────────────────────────
@@ -719,6 +690,7 @@ function toggleView(id) {
   const isHidden = el.style.display === 'none';
   el.style.display = isHidden ? 'block' : 'none';
 }
+
 // ── STATS ──────────────────────────────────────────────
 function renderStats() {
   const total = allSets.length;
@@ -759,10 +731,10 @@ function makeChart(id, type, labels, data) {
     type,
     data: { labels, datasets: [{
       data,
-      borderColor: '#ff7000',
-      backgroundColor: type === 'line' ? 'rgba(255,112,0,0.08)' : 'rgba(255,112,0,0.15)',
-      ...(type==='line' ? {tension:0.35,pointRadius:3,pointBackgroundColor:'#ff7000',borderWidth:2,fill:true} : {}),
-      ...(type==='bar'  ? {borderColor:'rgba(255,112,0,0.4)',borderWidth:1} : {})
+      borderColor: '#5C6937',
+      backgroundColor: type === 'line' ? 'rgba(92,105,55,0.08)' : 'rgba(92,105,55,0.15)',
+      ...(type==='line' ? {tension:0.35,pointRadius:3,pointBackgroundColor:'#5C6937',borderWidth:2,fill:true} : {}),
+      ...(type==='bar'  ? {borderColor:'rgba(92,105,55,0.4)',borderWidth:1} : {})
     }]},
     options: {
       responsive: false, animation: false,
@@ -823,6 +795,7 @@ function sw(name) {
   if (name === 'history')  renderHistory();
   if (name === 'routines') renderRoutines();
 }
+</script>
 </script>
 </body>
 </html>
