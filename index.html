@@ -17,7 +17,7 @@
   --bg:#080808;--s1:#111;--s2:#181818;
   --b1:#2a2a2a;--b2:#383838;
   --t1:#f2f2f2;--t2:#999;--t3:#555;--t4:#2e2e2e;
-  --orange:#ff7000;--pr:#f5c542;
+  --orange:#5C6937;--pr:#f5c542;
   --f:Helvetica Neue,Helvetica,Arial,sans-serif;
   --r:4px;
   --safe-top:env(safe-area-inset-top,0px);
@@ -261,13 +261,13 @@ html,body{
 
 <!-- MAIN APP -->
 <div id="app">
-  <div class="topbar">
-    <div class="logo">REPS</div>
-    <div class="topbar-right">
-      <div class="datestamp" id="ds"></div>
-      <button class="signout" onclick="signOut()">Sign out</button>
-    </div>
+ <div class="topbar">
+  <div class="datestamp" id="ds"></div>
+  <div class="logo">REPS</div>
+  <div class="topbar-right">
+    <button class="signout" onclick="signOut()">Sign out</button>
   </div>
+</div>
   <div class="tabs">
     <button class="tab on" onclick="sw('log')">Log</button>
     <button class="tab" onclick="sw('progress')">Progress</button>
@@ -501,6 +501,37 @@ async function loadData() {
     .from('routines').select('*').order('created_at', { ascending: false });
   routines = rdata || [];
 
+  // Load custom exercises
+  const { data: customEx } = await sb
+    .from('custom_exercises').select('*');
+  (customEx || []).forEach(ce => {
+    if (LIBRARY[ce.muscle_group] && !LIBRARY[ce.muscle_group].includes(ce.exercise_name)) {
+      LIBRARY[ce.muscle_group].push(ce.exercise_name);
+      LIBRARY[ce.muscle_group].sort();
+    }
+  });
+
+  st.textContent = '';
+  renderSummary();
+}
+
+  const { data: sets, error: setsErr } = await sb
+    .from('sets').select('*').order('created_at', { ascending: true });
+  if (setsErr) { st.textContent = '⚠ ' + setsErr.message; st.className = 'status err'; return; }
+
+  allSets   = sets || [];
+  todaySets = allSets.filter(s => s.logged_date === todayStr());
+  const prMap = {};
+  allSets.forEach(s => {
+    const p = prMap[s.exercise_name] || 0;
+    s._pr = +s.weight > p;
+    if (+s.weight > p) prMap[s.exercise_name] = +s.weight;
+  });
+
+  const { data: rdata } = await sb
+    .from('routines').select('*').order('created_at', { ascending: false });
+  routines = rdata || [];
+
   st.textContent = '';
   renderSummary();
 }
@@ -516,6 +547,26 @@ function onMuscleChange() {
 }
 
 function onExerciseChange() {
+ async function addToLibrary(exercise) {
+  const muscle = document.getElementById('muscleSelect').value;
+  if (!muscle || !exercise) return;
+  if (!LIBRARY[muscle].includes(exercise)) {
+    // Add to local library
+    LIBRARY[muscle].push(exercise);
+    LIBRARY[muscle].sort();
+    // Save to Supabase
+    await sb.from('custom_exercises').insert({
+      exercise_name: exercise,
+      muscle_group: muscle,
+      user_id: currentUser.id
+    }).select();
+    // Refresh dropdown
+    const s = document.getElementById('exerciseSelect');
+    if (s.value !== '' || muscle === document.getElementById('muscleSelect').value) {
+      s.innerHTML = '<option value="">— select —</option>' + LIBRARY[muscle].map(e => `<option value="${e}">${e}</option>`).join('');
+    }
+  }
+}
   const v = document.getElementById('exerciseSelect').value;
   if (!v) return;
   document.getElementById('exIn').value = v;
@@ -555,7 +606,7 @@ function renderSummary() {
     return `
       <div class="ex-block">
         <div class="ex-block-head">
-          <div class="ex-block-name">${ex}${hasPR ? '<span class="pr-badge">★ PR</span>' : ''}</div>
+          <div class="ex-block-name">${ex}${hasPR ? '<span class="pr-badge">★ PB</span>' : ''}</div>
           <span class="ex-block-meta">max ${mw}kg · ${vol}kg vol</span>
         </div>
         ${rows}
@@ -591,7 +642,7 @@ async function logSet() {
     
     data._pr = pr;
     allSets.push(data); todaySets.push(data);
-    if (pr) toast('★ NEW PR — ' + ex + ' ' + weight + 'kg');
+    if (pr) toast('★ NEW PB — ' + ex + ' ' + weight + 'kg');
     renderSummary(); st.textContent = '';
     btn.disabled = false;
   } catch(e) {
@@ -747,7 +798,7 @@ function renderHistory() {
     const vol  = sets.reduce((a,s) => a + s.sets*s.reps*s.weight, 0);
     const rows = sets.map(s => `
       <div class="h-row">
-        <div><span class="h-name">${s.exercise_name}</span>${s._pr ? '<span class="pr-badge">★ PR</span>' : ''}</div>
+        <div><span class="h-name">${s.exercise_name}</span>${s._pr ? '<span class="pr-badge">★ PB</span>' : ''}</div>
         <div style="display:flex;align-items:center;gap:12px">
           <div><div class="h-meta">${s.sets}×${s.reps} @ ${s.weight}kg</div><div class="h-vol">${s.sets*s.reps*s.weight}kg vol</div></div>
           <button class="set-del" onclick="delHistorySet('${s.id}')">×</button>
