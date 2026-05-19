@@ -372,7 +372,6 @@ html,body{
 <div class="toast" id="toast"></div>
 
 <script>
-<script>
 // ── CONFIG ─────────────────────────────────────────────
 const SB_URL = 'https://kghccccgvjyzdwbaklxj.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnaGNjY2Nndmp5emR3YmFrbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNTAwNDEsImV4cCI6MjA5MzkyNjA0MX0.sxhpO5Huuhh9qfa0Yg-xUeAJvDGcRe6aiI39hSly9d4';
@@ -380,10 +379,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 const { createClient } = supabase;
 const sb = createClient(SB_URL, SB_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
-  }
+  auth: { persistSession: false, autoRefreshToken: false }
 });
 
 const LIBRARY = {
@@ -426,7 +422,7 @@ async function submitAuth() {
   const btn = document.getElementById('authBtn');
   const st  = document.getElementById('authStatus');
   if (!email || !password) {
-    st.textContent = 'Enter email and PIN';
+    st.textContent = 'Enter email and password';
     st.className = 'auth-status err';
     return;
   }
@@ -795,7 +791,6 @@ function sw(name) {
   if (name === 'history')  renderHistory();
   if (name === 'routines') renderRoutines();
 }
-</script>
 </script>
 </body>
 </html>
