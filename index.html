@@ -467,11 +467,23 @@ async function signOut() {
 }
 
 sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+    if (!session) {
+      // Token invalid, force clean state
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('authScreen').style.display = 'flex';
+      currentUser = null;
+      return;
+    }
+  }
   if (session?.user) {
     currentUser = session.user;
     document.getElementById('authScreen').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     await loadData();
+  } else {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('authScreen').style.display = 'flex';
   }
 });
 
