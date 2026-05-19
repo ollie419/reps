@@ -547,31 +547,29 @@ function onMuscleChange() {
 }
 
 function onExerciseChange() {
- async function addToLibrary(exercise) {
-  const muscle = document.getElementById('muscleSelect').value;
-  if (!muscle || !exercise) return;
-  if (!LIBRARY[muscle].includes(exercise)) {
-    // Add to local library
-    LIBRARY[muscle].push(exercise);
-    LIBRARY[muscle].sort();
-    // Save to Supabase
-    await sb.from('custom_exercises').insert({
-      exercise_name: exercise,
-      muscle_group: muscle,
-      user_id: currentUser.id
-    }).select();
-    // Refresh dropdown
-    const s = document.getElementById('exerciseSelect');
-    if (s.value !== '' || muscle === document.getElementById('muscleSelect').value) {
-      s.innerHTML = '<option value="">— select —</option>' + LIBRARY[muscle].map(e => `<option value="${e}">${e}</option>`).join('');
-    }
-  }
-}
   const v = document.getElementById('exerciseSelect').value;
   if (!v) return;
   document.getElementById('exIn').value = v;
   const last = allSets.filter(s => s.exercise_name === v).slice(-1)[0];
   if (last) { document.getElementById('wtIn').value = last.weight; document.getElementById('repsIn').value = last.reps; }
+}
+
+async function addToLibrary(exercise) {
+  const muscle = document.getElementById('muscleSelect').value;
+  if (!muscle || !exercise) return;
+  if (!LIBRARY[muscle].includes(exercise)) {
+    LIBRARY[muscle].push(exercise);
+    LIBRARY[muscle].sort();
+    await sb.from('custom_exercises').insert({
+      exercise_name: exercise,
+      muscle_group: muscle,
+      user_id: currentUser.id
+    }).select();
+    const s = document.getElementById('exerciseSelect');
+    if (muscle === document.getElementById('muscleSelect').value) {
+      s.innerHTML = '<option value="">— select —</option>' + LIBRARY[muscle].map(e => `<option value="${e}">${e}</option>`).join('');
+    }
+  }
 }
 
 // ── PR ─────────────────────────────────────────────────
