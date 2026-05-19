@@ -252,8 +252,8 @@ html,body{
   </div>
   <div class="auth-fields">
     <input class="auth-input" id="authEmail" type="email" inputmode="email" placeholder="Email" autocapitalize="none" autocomplete="email"/>
-    <input class="auth-input" id="authPassword" type="password" inputmode="numeric" maxlength="6" placeholder="6-digit PIN" autocomplete="current-password"
-  onkeydown="if(event.key==='Enter') submitAuth()"/>
+    <input class="auth-input" id="authPassword" type="password" placeholder="Password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter') submitAuth()"/>
     <button class="btn-main" id="authBtn" onclick="submitAuth()">Sign In</button>
     <div class="auth-status" id="authStatus"></div>
   </div>
